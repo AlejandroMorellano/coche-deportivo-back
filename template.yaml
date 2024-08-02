@@ -1,0 +1,166 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  coche-deportivo-backend
+
+  Sample SAM Template for coche-deportivo-backend
+
+
+Globals:
+  Function:
+    Timeout: 25
+    MemorySize: 128
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: 'arn:aws:logs:*:*:*'
+        - PolicyName: get-secrets-db-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: 'arn:aws:secretsmanager:us-west-1:471112501035:secret:prod/musepa/vercel/postgres-REotkz'
+
+  # API Gateway
+  DeportivoApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: DeportivoApi
+      StageName: Dev
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+
+  # ------------ DEPORTIVO ------------
+  ActualizarDeportivoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: modules/deportivo/actualizar_deportivo
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        CurrentEventsListIntent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DeportivoApi
+            Path: /actualizar_deportivo
+            Method: PUT
+  ConsultarDeportivoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: modules/deportivo/consultar_deportivo
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        CurrentEventsListIntent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DeportivoApi
+            Path: /consultar_deportivo/{id}
+            Method: GET
+  ConsultarDeportivosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: modules/deportivo/consultar_deportivos
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        CurrentEventsListIntent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DeportivoApi
+            Path: /consultar_deportivos
+            Method: GET
+  CrearDeportivoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: modules/deportivo/crear_deportivo
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        CurrentEventsListIntent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DeportivoApi
+            Path: /crear_deportivo
+            Method: POST
+  EliminarDeportivoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: modules/deportivo/eliminar_deportivo
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        CurrentEventsListIntent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DeportivoApi
+            Path: /eliminar_deportivo/{id}
+            Method: DELETE
+
+Outputs:
+  PatineteApi:
+    Description: "API Gateway endpoint URL for Prod stage for coche_deportivo_backend api"
+    Value: !Sub "https://${DeportivoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+
+  LambdaExecutionRoleArn:
+    Description: "Implicit IAM Role created for Lambda function"
+    Value: !GetAtt LambdaExecutionRole.Arn
+
+  ActualizarDeportivoFunctionArn:
+    Description: "ActualizarDeportivoFunction Lambda function ARN"
+    Value: !GetAtt ActualizarDeportivoFunction.Arn
+  ConsultarDeportivoFunctionArn:
+    Description: "ConsultarDeportivoFunction Lambda function ARN"
+    Value: !GetAtt ConsultarDeportivoFunction.Arn
+  ConsultarDeportivosFunctionArn:
+    Description: "ConsultarDeportivosFunction Lambda function ARN"
+    Value: !GetAtt ConsultarDeportivosFunction.Arn
+  CrearDeportivoFunctionArn:
+    Description: "CrearDeportivoFunction Lambda function ARN"
+    Value: !GetAtt CrearDeportivoFunction.Arn
+  EliminarDeportivoFunctionArn:
+    Description: "EliminarDeportivoFunction Lambda function ARN"
+    Value: !GetAtt EliminarDeportivoFunction.Arn
+
